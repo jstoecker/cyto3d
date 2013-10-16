@@ -9,6 +9,8 @@ import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.osgi.framework.BundleContext;
 
+import edu.miami.cyto3d.C3DApp;
+
 /** Entry point for the OSGi bundle app */
 public class CyActivator extends AbstractCyActivator {
 
@@ -20,7 +22,7 @@ public class CyActivator extends AbstractCyActivator {
         cyApplicationManager = getService(context, CyApplicationManager.class);
 
         CySwingApplication cySwingApplication = getService(context, CySwingApplication.class);
-        app = new C3DApp(cySwingApplication.getJFrame());
+        app = new C3DApp(cyApplicationManager, cySwingApplication.getJFrame());
 
         MenuAction action = new MenuAction();
         Properties properties = new Properties();
