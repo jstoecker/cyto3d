@@ -12,31 +12,31 @@ import org.osgi.framework.BundleContext;
 /** Entry point for the OSGi bundle app */
 public class CyActivator extends AbstractCyActivator {
 
-	private C3DApp app;
-	private CyApplicationManager cyApplicationManager;
+    private C3DApp               app;
+    private CyApplicationManager cyApplicationManager;
 
-	@Override
-	public void start(BundleContext context) throws Exception {
-		cyApplicationManager = getService(context, CyApplicationManager.class);
+    @Override
+    public void start(BundleContext context) throws Exception {
+        cyApplicationManager = getService(context, CyApplicationManager.class);
 
-		CySwingApplication cySwingApplication = getService(context, CySwingApplication.class);
-		app = new C3DApp(cySwingApplication.getJFrame());
+        CySwingApplication cySwingApplication = getService(context, CySwingApplication.class);
+        app = new C3DApp(cySwingApplication.getJFrame());
 
-		MenuAction action = new MenuAction();
-		Properties properties = new Properties();
-		registerAllServices(context, action, properties);
-	}
+        MenuAction action = new MenuAction();
+        Properties properties = new Properties();
+        registerAllServices(context, action, properties);
+    }
 
-	/** Triggered when the user clicks on the menu item for the app */
-	private class MenuAction extends AbstractCyAction {
+    /** Triggered when the user clicks on the menu item for the app */
+    private class MenuAction extends AbstractCyAction {
 
-		public MenuAction() {
-			super(C3DApp.APP_NAME, cyApplicationManager, null, null);
-			setPreferredMenu("Apps");
-		}
+        public MenuAction() {
+            super(C3DApp.APP_NAME, cyApplicationManager, null, null);
+            setPreferredMenu("Apps");
+        }
 
-		public void actionPerformed(ActionEvent e) {
-
-		}
-	}
+        public void actionPerformed(ActionEvent e) {
+            app.showSettings();
+        }
+    }
 }
