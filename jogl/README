@@ -1,0 +1,34 @@
+Cyto3D needs the JOGL library to run. This directory contains the files needed
+to package the JOGL library into an OSGi bundle.
+
+Run the build.sh script to create the two JARs. They will be output to bin/.
+
+These two JARs need to be in ~/CytoscapeConfiguration/3/apps/installed/ along
+with the main app JAR.
+
+
+***************
+NOTES
+***************
+
+For JOGL to be used in an OSGi environment it needs access to the following
+packages:
+
+javax.swing
+sun.nio.ch
+apple.awt (on OS X only)
+sun.awt (on Windows only)
+
+The javax.swing package is exported by the system bundle, but the other three
+packages are not. To get access to these, a second JAR is created which is a
+system bundle fragment; this uses the system bundle as a host, and it will
+export the extra packages that are needed.
+
+jogl_main-2.1.0.jar contains the actual JOGL library classes and native code
+jogl_extension-2.1.0.jar is the system bundle fragment
+
+Ideally I would have jogl_extension-2.1.0.jar export sun.awt along with
+sun.nio.ch and apple.awt (and import this package in jogl_main-2.1.0.jar).
+Unfortunately, this creates issues inside of Cytoscape. Instead, Windows users
+will need to modify the org.osgi.framework.bootdelegation to include sun.*.
+This is found in Cytoscape/framework/etc/custom.properties.

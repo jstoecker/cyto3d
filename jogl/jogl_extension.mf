@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-SymbolicName: org.jogamp.jogl.extension
+Bundle-Version: 2.1.0
+Fragment-Host: system.bundle; extension:=framework
+Bundle-Name: JOGL OSGi Extension
+Export-Package: sun.nio.ch, apple.awt
+
