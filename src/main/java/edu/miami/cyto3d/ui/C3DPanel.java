@@ -1,180 +1,145 @@
 package edu.miami.cyto3d.ui;
 
 import java.awt.BorderLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
+import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
-import javax.swing.SwingConstants;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
-import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 
 import edu.miami.cyto3d.C3DApp;
 import edu.miami.cyto3d.GraphMapper;
+import edu.miami.cyto3d.graph.layout.force.ForceLayoutThread;
 import edu.miami.cyto3d.graph.model.Graph;
 import edu.miami.cyto3d.graph.view.GraphView;
+import edu.miami.cyto3d.util.ColorPanel;
+import edu.miami.cyto3d.util.PropertyLayout;
+import edu.miami.math.vector.Vec4;
 
 public class C3DPanel extends JPanel {
 
-    private JComboBox    cbNetwork;
-    private JComboBox    cbELAttribute;
-    private JCheckBox    chckbxFixedEdgeLengths;
-    private JPanel       panel;
-    private JLabel       lblMinEdgeLength;
-    private JLabel       lblMaxEdgeLength;
-    private JSpinner     spnMinEdge;
-    private JSpinner     spnMaxEdge;
-    private JPanel       panel_1;
+    private JComboBox         cbNetwork;
+    private JTextField        tfEdgeAttribute;
+    private JSpinner          spnMinEdgeLength;
+    private JSpinner          spnMaxEdgeLength;
+    private JSpinner          spnDamping;
+    private JSpinner          spnSpringiness;
+    private JSpinner          spnIteration;
+    private JCheckBox         chkReverseEdgeMapping;
+    private JCheckBox         chkLayoutActive;
+    private ColorPanel        colMinEdge;
+    private ColorPanel        colMaxEdge;
 
-    private Graph        graph;
-    private GraphView    graphView;
-
-    private final C3DApp app;
+    private ForceLayoutThread flt;
+    private final C3DApp      app;
 
     public void setGraph(Graph graph, GraphView view) {
-        this.graph = graph;
-        this.graphView = view;
     }
 
     public C3DPanel(final C3DApp plugin) {
         this.app = plugin;
-        setLayout(new BorderLayout(0, 0));
+        
+        setLayout(new BorderLayout());
 
-        panel = new JPanel();
-        add(panel, BorderLayout.CENTER);
-        GridBagLayout gbl_panel = new GridBagLayout();
-        gbl_panel.columnWidths = new int[] { 149, 137, 0 };
-        gbl_panel.rowHeights = new int[] { 27, 29, 0, 0, 0, 0, 0 };
-        gbl_panel.columnWeights = new double[] { 0.0, 1.0, Double.MIN_VALUE };
-        gbl_panel.rowWeights = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE };
-        panel.setLayout(gbl_panel);
+        JPanel settingsPanel = new JPanel();
+        PropertyLayout layout = new PropertyLayout();
+        layout.add("Network", cbNetwork = new JComboBox());
+        layout.add("Edge Attribute", tfEdgeAttribute = new JTextField("Ivalue"));
+        layout.add(chkReverseEdgeMapping = new JCheckBox("Reverse Edge Length", true));
+        layout.add("Min Edge Length", spnMinEdgeLength = new JSpinner(new SpinnerNumberModel(1.0f, 0.1f, 1000.0f, 1.0f)));
+        layout.add("Min Edge Color", colMinEdge = new ColorPanel("Min Edge Length Color", plugin.getPinStyle().getShortEdgeColor()));
+        layout.add("Max Edge Length", spnMaxEdgeLength = new JSpinner(new SpinnerNumberModel(5.0f, 0.1f, 1000.0f, 1.0f)));
+        layout.add("Max Edge Color", colMaxEdge = new ColorPanel("Max Edge Length Color", plugin.getPinStyle().getLongEdgeColor()));
+        layout.add("Damping", spnDamping = new JSpinner(new SpinnerNumberModel(0.9f, 0.0f, 1.0f, 0.1f)));
+        layout.add("Springiness", spnSpringiness = new JSpinner(new SpinnerNumberModel(0.1f, 0.1f, 5.0f, 0.1f)));
+        layout.add("Iteration MS", spnIteration = new JSpinner(new SpinnerNumberModel(20, 0, 1000, 10)));
+        layout.add(chkLayoutActive = new JCheckBox("Layout Active", true));
+        
+        layout.apply(settingsPanel);
+        add(settingsPanel, BorderLayout.NORTH);
 
-        JLabel lblNetwork = new JLabel("Network");
-        GridBagConstraints gbc_lblNetwork = new GridBagConstraints();
-        gbc_lblNetwork.insets = new Insets(0, 0, 5, 5);
-        gbc_lblNetwork.anchor = GridBagConstraints.EAST;
-        gbc_lblNetwork.gridx = 0;
-        gbc_lblNetwork.gridy = 0;
-        panel.add(lblNetwork, gbc_lblNetwork);
+        JButton viewButton = new JButton("View");
+        add(viewButton, BorderLayout.SOUTH);
 
-        cbNetwork = new JComboBox();
-        GridBagConstraints gbc_cbNetwork = new GridBagConstraints();
-        gbc_cbNetwork.fill = GridBagConstraints.HORIZONTAL;
-        gbc_cbNetwork.anchor = GridBagConstraints.NORTH;
-        gbc_cbNetwork.insets = new Insets(0, 0, 5, 0);
-        gbc_cbNetwork.gridx = 1;
-        gbc_cbNetwork.gridy = 0;
-        panel.add(cbNetwork, gbc_cbNetwork);
-
-        JLabel lblEdgeLengthAttribute = new JLabel("Edge Length");
-        GridBagConstraints gbc_lblEdgeLengthAttribute = new GridBagConstraints();
-        gbc_lblEdgeLengthAttribute.anchor = GridBagConstraints.EAST;
-        gbc_lblEdgeLengthAttribute.insets = new Insets(0, 0, 5, 5);
-        gbc_lblEdgeLengthAttribute.gridx = 0;
-        gbc_lblEdgeLengthAttribute.gridy = 1;
-        panel.add(lblEdgeLengthAttribute, gbc_lblEdgeLengthAttribute);
-
-        cbELAttribute = new JComboBox();
-        GridBagConstraints gbc_cbELAttribute = new GridBagConstraints();
-        gbc_cbELAttribute.fill = GridBagConstraints.HORIZONTAL;
-        gbc_cbELAttribute.insets = new Insets(0, 0, 5, 0);
-        gbc_cbELAttribute.anchor = GridBagConstraints.NORTH;
-        gbc_cbELAttribute.gridx = 1;
-        gbc_cbELAttribute.gridy = 1;
-        panel.add(cbELAttribute, gbc_cbELAttribute);
-
-        lblMinEdgeLength = new JLabel("Min. Edge Length");
-        GridBagConstraints gbc_lblMinEdgeLength = new GridBagConstraints();
-        gbc_lblMinEdgeLength.anchor = GridBagConstraints.EAST;
-        gbc_lblMinEdgeLength.insets = new Insets(0, 0, 5, 5);
-        gbc_lblMinEdgeLength.gridx = 0;
-        gbc_lblMinEdgeLength.gridy = 2;
-        panel.add(lblMinEdgeLength, gbc_lblMinEdgeLength);
-
-        spnMinEdge = new JSpinner();
-        spnMinEdge.setModel(new SpinnerNumberModel(new Integer(1), new Integer(1), null,
-                new Integer(1)));
-        GridBagConstraints gbc_spnMinEdge = new GridBagConstraints();
-        gbc_spnMinEdge.fill = GridBagConstraints.HORIZONTAL;
-        gbc_spnMinEdge.insets = new Insets(0, 0, 5, 0);
-        gbc_spnMinEdge.gridx = 1;
-        gbc_spnMinEdge.gridy = 2;
-        panel.add(spnMinEdge, gbc_spnMinEdge);
-
-        lblMaxEdgeLength = new JLabel("Max. Edge Length");
-        GridBagConstraints gbc_lblMaxEdgeLength = new GridBagConstraints();
-        gbc_lblMaxEdgeLength.anchor = GridBagConstraints.EAST;
-        gbc_lblMaxEdgeLength.insets = new Insets(0, 0, 5, 5);
-        gbc_lblMaxEdgeLength.gridx = 0;
-        gbc_lblMaxEdgeLength.gridy = 3;
-        panel.add(lblMaxEdgeLength, gbc_lblMaxEdgeLength);
-
-        spnMaxEdge = new JSpinner();
-        spnMaxEdge.setModel(new SpinnerNumberModel(new Integer(5), new Integer(1), null,
-                new Integer(1)));
-        GridBagConstraints gbc_spnMaxEdge = new GridBagConstraints();
-        gbc_spnMaxEdge.fill = GridBagConstraints.HORIZONTAL;
-        gbc_spnMaxEdge.insets = new Insets(0, 0, 5, 0);
-        gbc_spnMaxEdge.gridx = 1;
-        gbc_spnMaxEdge.gridy = 3;
-        panel.add(spnMaxEdge, gbc_spnMaxEdge);
-
-        chckbxFixedEdgeLengths = new JCheckBox("Equal Edge Lengths");
-        GridBagConstraints gbc_chckbxFixedEdgeLengths = new GridBagConstraints();
-        gbc_chckbxFixedEdgeLengths.anchor = GridBagConstraints.EAST;
-        gbc_chckbxFixedEdgeLengths.insets = new Insets(0, 0, 5, 0);
-        gbc_chckbxFixedEdgeLengths.gridx = 1;
-        gbc_chckbxFixedEdgeLengths.gridy = 4;
-        panel.add(chckbxFixedEdgeLengths, gbc_chckbxFixedEdgeLengths);
-        chckbxFixedEdgeLengths.setHorizontalTextPosition(SwingConstants.LEFT);
-
-        panel_1 = new JPanel();
-        add(panel_1, BorderLayout.SOUTH);
-
-        JButton btnView = new JButton("View");
-        panel_1.add(btnView);
-        btnView.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent arg0) {
-                String attribute = (String) cbELAttribute.getSelectedItem();
-
-                // CyNetwork network = Cytoscape.getNetwork((String) cbNetwork.getSelectedItem());
-
-                CyNetwork network = plugin.getAppManager().getCurrentNetwork();
-
-                float minEL = (Integer) spnMinEdge.getValue();
-                float maxEL = (Integer) spnMaxEdge.getValue();
-                new GraphMapper(network, attribute, plugin).map(minEL, maxEL);
+        // Action Listeners --------------
+        
+        
+        
+        viewButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                 CyNetwork network = plugin.getAppManager().getCurrentNetwork();
+                 String attribute = tfEdgeAttribute.getText();
+                 float minEL = ((SpinnerNumberModel)spnMinEdgeLength.getModel()).getNumber().floatValue();
+                 float maxEL = ((SpinnerNumberModel)spnMaxEdgeLength.getModel()).getNumber().floatValue();
+                 new GraphMapper(network, attribute, plugin).map(minEL, maxEL, chkReverseEdgeMapping.isSelected());
             }
         });
+        
+        spnDamping.getModel().addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                float damping = ((SpinnerNumberModel)spnDamping.getModel()).getNumber().floatValue();
+                flt.getLayout().setDamping(damping);
+            }
+        });
+        
+        spnSpringiness.getModel().addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                float springiness = ((SpinnerNumberModel)spnSpringiness.getModel()).getNumber().floatValue();
+                flt.getLayout().setSpringiness(springiness);
+            }
+        });
+        
+        spnIteration.getModel().addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                int interval = ((SpinnerNumberModel)spnIteration.getModel()).getNumber().intValue();
+                flt.setInterval(interval);
+            }
+        });
+        
+        chkLayoutActive.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+                flt.setEnabled(chkLayoutActive.isSelected());
+            }
+        });
+        
+        colMinEdge.addListener(new ColorPanel.Listener() {
+            public void colorChanged(ColorPanel panel, Vec4 newColor) {
+                plugin.getPinStyle().setShortEdgeColor(newColor);
+                plugin.getPinStyle().apply(plugin.getGraph(), plugin.getGraphView());
+            }
+        });
+        
+        colMaxEdge.addListener(new ColorPanel.Listener() {
+            public void colorChanged(ColorPanel panel, Vec4 newColor) {
+                plugin.getPinStyle().setLongEdgeColor(newColor);
+                plugin.getPinStyle().apply(plugin.getGraph(), plugin.getGraphView());
+            }
+        });
+    }
+    
+    public void setForceLayoutThread(ForceLayoutThread flt) {
+       this.flt = flt;
+       spnIteration.setValue(flt.getInterval());
+       spnDamping.setValue(flt.getLayout().getDamping());
+       spnSpringiness.setValue(flt.getLayout().getSpringiness());
+       chkLayoutActive.setSelected(flt.isEnabled());
     }
 
     public void update() {
         // TODO: change to listener
 
-        CyNetwork network = app.getAppManager().getCurrentNetwork();
-        
         cbNetwork.removeAllItems();
-        cbNetwork.addItem(network);
-        
-        cbELAttribute.removeAllItems();
-        cbELAttribute.addItem("Ivalue");
-
-
-        // cbELAttribute.removeAllItems();
-        // String[] edgeAttributes = Cytoscape.getEdgeAttributes().getAttributeNames();
-        // for (String attribute : edgeAttributes) {
-        // cbELAttribute.addItem(attribute);
-        // System.out.println(attribute);
-        // }
+        cbNetwork.addItem(app.getAppManager().getCurrentNetwork());
     }
 }

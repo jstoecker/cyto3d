@@ -45,7 +45,7 @@ public class GraphMapper {
      * @param maxEL
      *            - maximum edge length
      */
-    public void map(float minEL, float maxEL) {
+    public void map(float minEL, float maxEL, boolean reverseEdgeMapping) {
 
         Graph graph = new BasicGraph();
         GraphView graphView = new BasicGraphView(graph);
@@ -65,25 +65,41 @@ public class GraphMapper {
             vertexView.setPosition(p);
             nodeMap.put(node, vertex);
         }
+        
+        double globalMin = Double.POSITIVE_INFINITY;
+        double globalMax = Double.NEGATIVE_INFINITY;
 
         for (CyEdge edge : network.getEdgeList()) {
             Vertex src = nodeMap.get(edge.getSource());
             Vertex tgt = nodeMap.get(edge.getTarget());
-
             Edge edge3D = graph.createEdge(src, tgt, false);
 
             if (edgeLengthName == null) {
                 edge3D.getAttributes().set("length", maxEL);
             } else {
                 try {
-                    double d = network.getRow(edge).get(edgeLengthName, Double.class);
-                    float el = interactivityToLength((float)d, minEL, maxEL);
-                    edge3D.getAttributes().set("length", el);
+                    double l = network.getRow(edge).get(edgeLengthName, Double.class);
+                    
+                    if (l > globalMax) globalMax = l;
+                    if (l < globalMin) globalMin = l;
+                    
+                    edge3D.getAttributes().set("length", l);
                 } catch (Exception e) {
                     edge3D.getAttributes().set("length", maxEL);
                 }
             }
-
+        }
+        
+        if (globalMax > 0) {
+            for (Edge edge : graph.getEdges()) {
+                double l = edge.getAttributes().get("length", -1.0);
+                double lNormalized = (l - globalMin) / (globalMax - globalMin);
+                if (reverseEdgeMapping)
+                    lNormalized = 1 - lNormalized;
+                
+                double lMapped = lNormalized * (maxEL - minEL) + minEL;
+                edge.getAttributes().set("length", lMapped);
+            }
         }
 
         graph.getAttributes().set("min_edge_length", minEL);
@@ -91,10 +107,5 @@ public class GraphMapper {
         graph.getAttributes().set("name", network.getRow(network).get(CyNetwork.NAME, String.class));
 
         plugin.setNewGraph(graph, graphView, true);
-    }
-
-    private float interactivityToLength(float interactivity, float minEL, float maxEL) {
-        float range = maxEL - minEL;
-        return (1 - interactivity) * range + minEL;
     }
 }

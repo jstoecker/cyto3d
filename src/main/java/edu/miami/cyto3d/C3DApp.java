@@ -8,12 +8,9 @@ import org.cytoscape.application.CyApplicationManager;
 import edu.miami.cyto3d.graph.model.BasicGraph;
 import edu.miami.cyto3d.graph.model.Graph;
 import edu.miami.cyto3d.graph.style.PINStyle;
-import edu.miami.cyto3d.graph.test.MoviePanel;
 import edu.miami.cyto3d.graph.view.BasicGraphView;
 import edu.miami.cyto3d.graph.view.GraphView;
 import edu.miami.cyto3d.ui.C3DPanel;
-import edu.miami.cyto3d.ui.ConfigPanel;
-import edu.miami.cyto3d.ui.layout.ForceOptionPanel;
 
 /**
  * Main class for Cyto3D app. Stores all the state.
@@ -22,7 +19,7 @@ import edu.miami.cyto3d.ui.layout.ForceOptionPanel;
  */
 public class C3DApp {
 
-    public static final String APP_NAME    = "Cyto3D";
+    public static final String APP_NAME   = "Cyto3D";
 
     // main graph model : this may be changed by the viewer at any time through the user interface
     Graph                      graph;
@@ -31,23 +28,22 @@ public class C3DApp {
 
     // configuration dialog for creating and modifying the current graph and its view
     final JDialog              configDialog;
-    final ConfigPanel          configPanel = new ConfigPanel();
-    final C3DPanel             c3dPanel    = new C3DPanel(this);
-    final ForceOptionPanel     forcePanel  = new ForceOptionPanel();
+    final C3DPanel             c3dPanel;
     final JDialog              graphWindow;
+    
+    PINStyle pinStyle;
 
     final CyApplicationManager appManager;
 
     public C3DApp(CyApplicationManager appManager, JFrame mainFrame) {
         this.appManager = appManager;
         
+        pinStyle = new PINStyle();
+        c3dPanel = new C3DPanel(this);
+
         configDialog = new JDialog(mainFrame);
         configDialog.setDefaultCloseOperation(JDialog.HIDE_ON_CLOSE);
-        configDialog.getContentPane().add(configPanel);
-        configPanel.insertTab("Network", 0, c3dPanel);
-        configPanel.insertTab("Layout", 1, forcePanel);
-//        configPanel.insertTab("Movie", 2, new MoviePanel(this));
-        configPanel.setTab(0);
+        configDialog.getContentPane().add(c3dPanel);
         configDialog.pack();
 
         graph = new BasicGraph();
@@ -72,11 +68,15 @@ public class C3DApp {
     public GraphViewer getViewer() {
         return viewer;
     }
+    
+    public PINStyle getPinStyle() {
+        return pinStyle;
+    }
 
     public CyApplicationManager getAppManager() {
         return appManager;
     }
-    
+
     public void setNewGraph(Graph graph, GraphView view, boolean applyStyle) {
         this.graph = graph;
         this.graphView = view;
@@ -84,11 +84,11 @@ public class C3DApp {
         graphWindow.setTitle(graph.getAttributes().get("name", "Graph 3D"));
 
         if (applyStyle)
-            new PINStyle().apply(graph, view);
+            pinStyle.apply(graph, view);
 
         graphWindow.setVisible(true);
 
-        forcePanel.setForceLayoutThread(viewer.getForceLayout());
+        c3dPanel.setForceLayoutThread(viewer.getForceLayout());
     }
 
     public void showSettings() {

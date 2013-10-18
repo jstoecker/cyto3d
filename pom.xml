@@ -5,6 +5,7 @@
 	<properties>
 		<bundle.symbolicName>edu.miami.cyto3d.cyto3d</bundle.symbolicName>
 		<bundle.namespace>edu.miami.cyto3d</bundle.namespace>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 
 	<modelVersion>4.0.0</modelVersion>
